@@ -3,7 +3,7 @@ var eth = require("./eth.js");
 var sha256 = require("js-sha256");
 
 (async () => {
-    await eth.start(settings.eth, async () => {
+    await eth.start(settings, async () => {
         await eth.embark(async () => {
             try {
                 var activeFishes = {};
@@ -37,7 +37,7 @@ var sha256 = require("js-sha256");
                 
                 var direction = false;
                 if (shipLocation < (await eth.getFishLocation(i))["0"]) {
-                    await eth.setSail(true);
+                    direction = true;
                 }
                 await eth.setSail(direction);
                 

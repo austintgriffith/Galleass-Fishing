@@ -4,11 +4,15 @@ var user = {};
 var contracts = {};
 var galleass = {};
 async function getContract(name, target) {
-    contracts[target] = await contracts.galleass.methods.getContract(web3.utils.fromAscii(name)).call();
-    contracts[target] = new web3.eth.Contract(require("./abis/" + target + ".json"), contracts[target], {
-        gasPrice: "10000000000",
-        gas: "200000"
-    });
+    try {
+        contracts[target] = await contracts.galleass.methods.getContract(web3.utils.fromAscii(name)).call();
+        contracts[target] = new web3.eth.Contract(require("./abis/" + target + ".json"), contracts[target], {
+            gasPrice: "10000000000",
+            gas: "200000"
+        });
+    } catch(e) {
+        console.log(e);
+    }
 }
 
 var ship;
@@ -157,5 +161,5 @@ module.exports = {
         await contracts.sea.methods.disembark(ship).send({
             from: user.address
         });
-    },
+    }
 }

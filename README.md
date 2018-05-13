@@ -13,3 +13,5 @@ To use:
 2) If you're not using Ropsten, update the Galleass contract address.
 
 3) Enter the block of your first TX with Galleas.
+
+4) Enable RPC on your local node. ETH, NET, WEB3, and Personal.
