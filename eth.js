@@ -80,14 +80,14 @@ module.exports = {
     
     getFish: async() => {
         return await contracts.sea.getPastEvents("Fish", {
-            fromBlock: 1000000,
+            fromBlock: galleass.creationBlock,
             toBlock: "latest"
         });
     },
     
     getCatches: async() => {
         return await contracts.sea.getPastEvents("Catch", {
-            fromBlock: 1000000,
+            fromBlock: galleass.creationBlock,
             toBlock: "latest"
         });
     },

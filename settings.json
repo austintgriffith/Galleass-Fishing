@@ -1,6 +1,7 @@
 {
-    "address": "0x8fa93e4885fadd9c47fdb755d372791efce6eaea",
+    "address": "0xb6130217b4e7c3ccc9b42f538ee2017674bf0940",
     "password": "",
     "galleass": "0xC15fa062d898f89e943429D056200D08614DDF89",
-    "creationBlock": 3222000
+    "creationBlock": 1000000,
+    "minimumEth": 0.15
 }

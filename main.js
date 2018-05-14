@@ -10,6 +10,7 @@ var eth = require("./eth.js");
       output: process.stdout
     });
     rl.question("", async () => {
+        console.log("Finishing this run and then returning to harbor.");
         keepFishing = false;
     });
     
@@ -87,9 +88,9 @@ var eth = require("./eth.js");
     await eth.embark();
     do {
         await goFishing();
-    } while (keepFishing && (parseFloat(eth.getBalance()) > 0.15));
+    } while (keepFishing && (parseFloat(await eth.getBalance()) > settings.minimumEth));
     
-    console.log(" Returning to the harbor...");
+    console.log("Returning to the harbor...");
     await eth.setSail((await eth.getShip()).location < (await eth.getHarborLocation()));
     var disembarkInterval = setInterval(async () => {
         if (Math.abs(((await eth.getShip()).location) - (await eth.getHarborLocation())) < 3000) {
