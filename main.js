@@ -2,9 +2,9 @@ var settings = require("./settings.json");
 var eth = require("./eth.js");
 
 (async () => {
-    await eth.start(settings);
-    
     var keepFishing = true;
+    var currentlyFishing = false;
+    
     var rl = require("readline").createInterface({
       input: process.stdin,
       output: process.stdout
@@ -54,14 +54,22 @@ var eth = require("./eth.js");
         await eth.setSail(direction);
         
         var anchorInterval = setInterval(async () => {
+            var attempts = 0;
             //Kept as a callback so if we fail, we can loop back to this. It's the equivalent of a goto.
             async function anchorCB() {
+                attempts++;
+                
                 var random = eth.web3.utils.randomHex(32);
                 console.log("Casting a line...");
                 await eth.castLine(eth.web3.utils.sha3(random));
                 console.log("Reeling it in...");
                 var caughtFish = await eth.reelIn(closestIndex, random);
                 if (!(caughtFish)) {
+                    if (attempts === 5) {
+                        console.log("We've tried too long on this fish. Moving on...");
+                        currentlyFishing = false;
+                        return;
+                    }
                     console.log("We didn't catch anything :( Trying again...");
                     anchorCB();
                     return;
@@ -70,35 +78,44 @@ var eth = require("./eth.js");
                 console.log("We caught something!");
                 await eth.sellFish(species);
                 console.log("Sold the fish.");
+                currentlyFishing = false;
             }
             
             var ship = await eth.getShip();
             console.log("Your ship's location: " + ship.location);
             console.log("The fish's location: " + (await eth.getFishLocation(closestIndex))["0"]);
-            if ((direction) && (ship.location > ((await eth.getFishLocation(closestIndex))["0"]) - 1024)) {
+            if (Math.abs(ship.location - (await eth.getFishLocation(closestIndex))["0"]) < 1024) {
                 clearInterval(anchorInterval);
-                await eth.dropAnchor(anchorCB);
-            } else if ((!(direction)) && (ship.location - 1024 < (await eth.getFishLocation(closestIndex))["0"])) {
-                clearInterval(anchorInterval);
+                console.log("Dropping anchor...");
                 await eth.dropAnchor(anchorCB);
             }
         }, 10000);
     }
     
-    await eth.embark();
-    do {
-        await goFishing();
-    } while (keepFishing && (parseFloat(await eth.getBalance()) > settings.minimumEth));
     
-    console.log("Returning to the harbor...");
-    await eth.setSail((await eth.getShip()).location < (await eth.getHarborLocation()));
-    var disembarkInterval = setInterval(async () => {
-        if (Math.abs(((await eth.getShip()).location) - (await eth.getHarborLocation())) < 3000) {
-            clearInterval(disembarkInterval);
-            console.log("We're close enough to disembark!");
-            await eth.dropAnchor();
-            await eth.disembark();
-            console.log("Disembarked!");
+    await eth.start(settings, async () => {
+        await eth.embark();
+        
+        var fishingInterval;
+        async function fishingIntervalFunction() {
+            if (keepFishing && (await eth.getBalance() > settings.minimumEth) && (!(currentlyFishing))) {
+                console.log("Going for a new fish...");
+                currentlyFishing = true;
+                await goFishing();
+                return;
+            }
+            
+            if ((!(keepFishing)) || ((await eth.getBalance()) < settings.minimumEth)) {
+                clearInterval(fishingInterval);
+                var shutdownInterval = setInterval(async () => {
+                    if (!(currentlyFishing)) {
+                        clearInterval(shutdownInterval);
+                        require("./disembark.js");
+                    }
+                }, 3000);
+            }
         }
-    }, 5000);
+        fishingInterval = setInterval(fishingIntervalFunction, 10000);
+        fishingIntervalFunction();
+    });
 })();

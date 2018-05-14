@@ -12,6 +12,10 @@ To use:
 
 2) If you're not using Ropsten, update the Galleass contract address.
 
-3) Enter the block of your first TX with Galleas.
+3) Set the minimumEth variable.
 
 4) Enable RPC on your local node. Eth, net, web3, and personal are the needed APIs.
+
+4) Run main.js.
+
+If there was an issue with the bot and your boat is still at sea, run the disembark script on it's own.

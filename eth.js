@@ -16,17 +16,17 @@ module.exports = {
     web3: web3,
     
     getBalance: async () => {
-        return web3.utils.fromWei(await web3.eth.getBalance(user.address));
+        return parseFloat(web3.utils.fromWei(await web3.eth.getBalance(user.address)));
     },
     
-    start: async(settings) => {
+    start: async(settings, callback) => {
         user.address = settings.address;
         user.password = settings.password;
         
         galleass.address = settings.galleass;
         galleass.creationBlock = settings.creationBlock;
         
-        contracts.galleass = new web3.eth.Contract(require("./abis/galleass.json"), settings.galleass, {
+        contracts.galleass = new web3.eth.Contract(require("./abis/galleass.json"), galleass.address, {
             gasPrice: "10000000000"
         });
         await getContract("Dogger", "ship");
@@ -37,6 +37,7 @@ module.exports = {
         var ships = await contracts.ship.methods.tokensOfOwner(user.address).call();
         if (ships.length > 0) {
             ship = ships[0];
+            await callback();
             return;
         }
         
@@ -62,14 +63,14 @@ module.exports = {
             var ships = await contracts.ship.methods.tokensOfOwner(user.address).call();
             if (ships.length > 0) {
                 ship = ships[0];
-                return;
+                await callback();
             } else {
                 console.log("I have bought a ship for you. Please restart this bot. Your ship SHOULD (but may not) be ready now!");
             }
         });
     },
     
-    embark: async(callback) => {
+    embark: async() => {
         var ships = await contracts.ship.methods.tokensOfOwner(user.address).call();
         ship = parseInt(ships[0]);
         await web3.eth.personal.unlockAccount(user.address, user.password);
@@ -120,10 +121,12 @@ module.exports = {
     },
     
     setSail: async(direction) => {
-        await web3.eth.personal.unlockAccount(user.address, user.password);
-        await contracts.sea.methods.setSail(direction).send({
-            from: user.address
-        });
+        try {
+            await web3.eth.personal.unlockAccount(user.address, user.password);
+            await contracts.sea.methods.setSail(direction).send({
+                from: user.address
+            });
+        }catch(e){}
     },
     
     dropAnchor: async(callback) => {
@@ -132,7 +135,7 @@ module.exports = {
             from: user.address
         });
         if (callback) {
-            callback();
+            await callback();
         }
     },
     
@@ -145,11 +148,15 @@ module.exports = {
         }catch(e){}
     },
     
-    reelIn: async(id, bait, callback) => {
+    reelIn: async(id, bait) => {
         await web3.eth.personal.unlockAccount(user.address, user.password);
-        return (await contracts.sea.methods.reelIn(id, bait).send({
-            from: user.address
-        })).events.Attempt.returnValues.result;
+        try {
+            return (await contracts.sea.methods.reelIn(id, bait).send({
+                from: user.address
+            })).events.Attempt.returnValues.result;
+        } catch(e) {
+            return false;
+        }
     },
     
     getSpecies: async(fish) => {
