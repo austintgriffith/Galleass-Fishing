@@ -4,15 +4,11 @@ var user = {};
 var contracts = {};
 var galleass = {};
 async function getContract(name, target) {
-    try {
-        contracts[target] = await contracts.galleass.methods.getContract(web3.utils.fromAscii(name)).call();
-        contracts[target] = new web3.eth.Contract(require("./abis/" + target + ".json"), contracts[target], {
-            gasPrice: "10000000000",
-            gas: "200000"
-        });
-    } catch(e) {
-        console.log(e);
-    }
+    contracts[target] = await contracts.galleass.methods.getContract(web3.utils.fromAscii(name)).call();
+    contracts[target] = new web3.eth.Contract(require("./abis/" + target + ".json"), contracts[target], {
+        gasPrice: "10000000000",
+        gas: "250000"
+    });
 }
 
 var ship;
@@ -35,7 +31,6 @@ module.exports = {
         await getContract("Fishmonger", "fishmonger");
         
         var ships = await contracts.ship.methods.tokensOfOwner(user.address).call();
-        console.log(JSON.stringify(ships));
         if (ships.length > 0) {
             ship = ships[0];
             await callback();
@@ -47,11 +42,13 @@ module.exports = {
           output: process.stdout
         });
         
-        rl.question("You must have a ship in your inventory to continue. Do I have permission to buy a ship for you (Yes/No)?\r\n\r\nIf you have already bought a ship, please close this and wait.\r\n", async (answer) => {
+        rl.question("You must have a ship in your inventory to continue. Do I have permission to buy a ship for you (Yes/No)?\r\n\r\nIf you have already bought a ship, please close this (Ctrl^C) and wait.\r\n", async (answer) => {
             if (answer.substr(0, 1).toLowerCase() !== "y") {
                 console.log("I have not bought a ship for you. Please come back later!");
                 return;
             }
+            
+            console.log("Buying a ship...");
             
             await web3.eth.personal.unlockAccount(user.address, user.password);
             await contracts.harbor.methods.buyShip(web3.utils.fromAscii("Dogger")).send({
@@ -59,7 +56,7 @@ module.exports = {
                 value: await contracts.harbor.methods.currentPrice(web3.utils.fromAscii("Dogger")).call()
             })
             
-            console.log("I have bought a ship for you. Please come back soon! Your ship should be ready soon!");
+            console.log("I have bought a ship for you. Please restart this bot. Your ship SHOULD (but may not) be ready now!");
             rl.close();
         });
     },
@@ -76,7 +73,7 @@ module.exports = {
     
     getFish: async() => {
         return await contracts.sea.getPastEvents("Fish", {
-            fromBlock: 2500000,
+            fromBlock: 2000000,
             toBlock: "latest"
         });
     },
@@ -89,18 +86,26 @@ module.exports = {
     },
     
     getShip: async() => {
-        var ethShip = await contracts.sea.methods.ships(user.address).call();
+        var ethShip = await contracts.sea.methods.ships(user.address).call({
+            from: user.address
+        });
+        var shipLocation = await contracts.sea.methods.shipLocation(user.address).call({
+            from: user.address
+        });
+        ethShip.blockNumber = parseInt(ethShip.blockNumber);
+        ethShip.location = parseInt(ethShip.location);
         return {
             id: ethShip.id,
-            location: ethShip.location,
+            floating: ethShip.floating,
             sailing: ethShip.sailing,
             direction: ethShip.direction,
+            location: shipLocation,
             fishing: ethShip.fishing
         }
     },
     
     getHarborLocation: async() => {
-        return await contracts.sea.methods.getHarborLocation().call();
+        return parseInt(await contracts.sea.methods.getHarborLocation().call());
     },
     
     getFishLocation: async(id) => {
@@ -119,30 +124,28 @@ module.exports = {
         await contracts.sea.methods.dropAnchor().send({
             from: user.address
         });
-        callback();
+        setTimeout(callback, 10000);
     },
     
     castLine: async(hash, callback) => {
         await web3.eth.personal.unlockAccount(user.address, user.password);
-        await contracts.sea.methods.castLine(hash).send({
-            from: user.address
-        });
+        try { //Web3 hates castLine.
+            await contracts.sea.methods.castLine(hash).send({
+                from: user.address
+            });
+        }catch(e){}
         callback();
     },
     
     reelIn: async(id, bait, callback) => {
-        var res = await contracts.sea.methods.reelIn(id, bait).call({
-            from: user.address
-        });
         await web3.eth.personal.unlockAccount(user.address, user.password);
-        await contracts.sea.methods.reelIn(id, bait).send({
+        callback((await contracts.sea.methods.reelIn(id, bait).send({
             from: user.address
-        });
-        callback(res);
+        })).events.Attempt.returnValues.result);
     },
     
     getSpecies: async(fish) => {
-        return await contracts.sea.methods.fish(fish).call();
+        return (await contracts.sea.methods.fish(fish).call());
     },
     
     sellFish: async(species) => {
@@ -151,9 +154,9 @@ module.exports = {
             from: user.address
         });
     },
-    
-    nearHarbor: async() => {
-        return await contracts.sea.methods.inRangeToDisembark(user.address).call();
+
+    canDisembark: async() => {
+        return (await contracts.sea.methods.inRangeToDisembark(user.address).call());
     },
     
     disembark: async(id) => {

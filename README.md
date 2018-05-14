@@ -1,8 +1,8 @@
 # Fishing
 
-A fishing bot for [Galleass](galleass.io)
+A fishing bot for [Galleass](galleass.io).
 
-Completed for the [bounty.](https://gitcoin.co/issue/austintgriffith/galleass/1/418)
+Completed for the [bounty](https://gitcoin.co/issue/austintgriffith/galleass/1/418).
 
 MIT Licensed.
 
@@ -14,4 +14,4 @@ To use:
 
 3) Enter the block of your first TX with Galleas.
 
-4) Enable RPC on your local node. ETH, NET, WEB3, and Personal.
+4) Enable RPC on your local node. Eth, net, web3, and personal are the needed APIs.
