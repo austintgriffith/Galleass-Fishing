@@ -1,7 +1,7 @@
 {
-    "address": "0xb6130217b4e7c3ccc9b42f538ee2017674bf0940",
-    "password": "",
-    "galleass": "0xC15fa062d898f89e943429D056200D08614DDF89",
-    "creationBlock": 1000000,
-    "minimumEth": 0.15
+  "galleass": "0x1E7b15885C1E2EC5C92e43360C59CC7a7d8d69Fd",
+  "creationBlock": "1",
+  "minimumEth": 0.15,
+  "delayBetweenFishing": 2000,
+  "sendCopper": "0x2a906694d15df38f59e76ed3a5735f8aabcce9cb"
 }
